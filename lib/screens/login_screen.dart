@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,9 +41,20 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _error = e.toString().replaceFirst('Exception: ', '');
-        });
+        if (e is AuthException && !e.isVerified) {
+          setState(() {
+            _error = e.message;
+          });
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) {
+              context.push('/verify-email', extra: {'email': e.email, 'message': 'Please verify your email first'});
+            }
+          });
+        } else {
+          setState(() {
+            _error = e.toString().replaceFirst('Exception: ', '');
+          });
+        }
       }
     }
   }
@@ -92,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             const Text('Password', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
             TextButton(
-              onPressed: () {}, // TODO: Add forgot password navigation
+              onPressed: () => context.push('/forgot-password'),
               child: const Text('Forgot Password?', style: TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold)),
             )
           ],

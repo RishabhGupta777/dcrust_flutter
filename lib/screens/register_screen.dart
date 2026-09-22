@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
+import '../utils/programs_list.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -21,11 +22,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   
   final _yearFromController = TextEditingController();
   final _yearToController = TextEditingController();
-  final _degreeController = TextEditingController();
-  final _branchController = TextEditingController();
   final _sectionController = TextEditingController();
   final _rollNoController = TextEditingController();
   final _skillsController = TextEditingController();
+  
+  String _selectedDegree = '';
+  String _selectedBranch = '';
 
   bool _showPassword = false;
   bool _isLoading = false;
@@ -41,8 +43,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _confirmPasswordController.dispose();
     _yearFromController.dispose();
     _yearToController.dispose();
-    _degreeController.dispose();
-    _branchController.dispose();
     _sectionController.dispose();
     _rollNoController.dispose();
     _skillsController.dispose();
@@ -52,6 +52,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
     
+    if (_selectedDegree.isEmpty || _selectedBranch.isEmpty) {
+      setState(() { _error = 'Please select degree and branch'; });
+      return;
+    }
+
     if (_passwordController.text != _confirmPasswordController.text) {
       setState(() { _error = 'Passwords do not match'; });
       return;
@@ -78,8 +83,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'educationDetails': {
           'yearFrom': _yearFromController.text.trim(),
           'yearTo': _yearToController.text.trim(),
-          'degree': _degreeController.text.trim(),
-          'branch': _branchController.text.trim(),
+          'degree': _selectedDegree,
+          'branch': _selectedBranch,
           'section': _sectionController.text.trim(),
           'rollNo': _rollNoController.text.trim(),
         },
@@ -89,8 +94,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       await AuthService.register(userData);
       
       if (mounted) {
-        // Registration successful, navigate to login
-        context.go('/login');
+        // Registration successful, navigate to email verification
+        context.push('/verify-email', extra: {'email': _emailController.text.trim()});
       }
     } catch (e) {
       if (mounted) {
@@ -190,11 +195,67 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   Row(
                     children: [
-                      Expanded(child: _buildTextField(_degreeController, 'Degree / Category')),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              isExpanded: true,
+                              value: _selectedDegree.isNotEmpty ? _selectedDegree : null,
+                              hint: const Text('Select Degree *'),
+                              items: programsData.keys.map((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                              onChanged: (newValue) {
+                                setState(() {
+                                  _selectedDegree = newValue!;
+                                  _selectedBranch = '';
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 16),
-                      Expanded(child: _buildTextField(_branchController, 'Branch / Course')),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: _selectedDegree.isEmpty ? Colors.grey[200] : Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              isExpanded: true,
+                              value: _selectedBranch.isNotEmpty ? _selectedBranch : null,
+                              hint: const Text('Select Branch *'),
+                              items: _selectedDegree.isNotEmpty ? programsData[_selectedDegree]!.map((Program prog) {
+                                return DropdownMenuItem<String>(
+                                  value: prog.name,
+                                  child: Text('${prog.code} - ${prog.name}', overflow: TextOverflow.ellipsis),
+                                );
+                              }).toList() : [],
+                              onChanged: _selectedDegree.isEmpty ? null : (newValue) {
+                                setState(() {
+                                  _selectedBranch = newValue!;
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(child: _buildTextField(_sectionController, 'Section')),

@@ -29,54 +29,15 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text('Home'),
-            onTap: () {
-              Navigator.pop(context);
-              context.go('/');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.event),
-            title: const Text('Events'),
-            onTap: () {
-              Navigator.pop(context);
-              context.go('/events');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.check_circle_outline),
-            title: const Text('Attendance'),
-            onTap: () {
-              Navigator.pop(context);
-              context.go('/attendance');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.report_problem),
-            title: const Text('Complaints'),
-            onTap: () {
-              Navigator.pop(context);
-              context.go('/complaints');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.library_books),
-            title: const Text('Previous Papers'),
-            onTap: () {
-              Navigator.pop(context);
-              context.go('/papers');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.chat),
-            title: const Text('Chat'),
-            onTap: () {
-              Navigator.pop(context);
-              context.go('/chat');
-            },
-          ),
+          if (user?.role == 'admin')
+            ListTile(
+              leading: const Icon(Icons.admin_panel_settings),
+              title: const Text('Admin Dashboard'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/admin');
+              },
+            ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout),

@@ -3,6 +3,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 import '../models/user_model.dart';
 
+class AuthException implements Exception {
+  final String message;
+  final bool isVerified;
+  final String? email;
+
+  AuthException(this.message, {this.isVerified = true, this.email});
+
+  @override
+  String toString() => message;
+}
+
 class AuthService {
   static Future<Map<String, dynamic>> login(String identifier, String password) async {
     final response = await ApiService.post('/auth/login', body: {
@@ -22,6 +33,13 @@ class AuthService {
       return {'user': user, 'token': token};
     } else {
       final error = jsonDecode(response.body);
+      if (response.statusCode == 403 && error['isVerified'] == false) {
+        throw AuthException(
+          error['message'] ?? 'Please verify your email first',
+          isVerified: false,
+          email: error['email'],
+        );
+      }
       throw Exception(error['message'] ?? 'Login failed');
     }
   }
