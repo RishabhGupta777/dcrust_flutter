@@ -13,7 +13,13 @@ import '../widgets/app_drawer.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? startChatWith;
-  const ChatScreen({super.key, this.startChatWith});
+  final ValueChanged<bool>? onActiveChatChanged;
+
+  const ChatScreen({
+    super.key,
+    this.startChatWith,
+    this.onActiveChatChanged,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -48,6 +54,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _isInit = false;
       if (widget.startChatWith != null) {
         _showSidebarOnMobile = false;
+        widget.onActiveChatChanged?.call(true);
       }
       _initializeChat();
     }
@@ -73,6 +80,11 @@ class _ChatScreenState extends State<ChatScreen> {
     _socket!.onConnect((_) {
       _socket!.emit('setup', user.toJson());
       setState(() => _socketConnected = true);
+      
+      // Join all rooms once socket connects
+      for (var room in _rooms) {
+        _socket!.emit('join_room', room.id);
+      }
     });
 
     _setupSocketListeners();
@@ -247,6 +259,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _editingMessage = null;
       _messageController.clear();
     });
+    widget.onActiveChatChanged?.call(true);
     _fetchMessages(room.id);
     final user = Provider.of<AuthProvider>(context, listen: false).user;
     if (user != null) {
@@ -328,23 +341,43 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth > 768;
-        
-        return Scaffold(
-          backgroundColor: Colors.grey.shade100,
-          appBar: isDesktop ? null : AppBar(
-            backgroundColor: _selectedMessages.isNotEmpty ? Colors.indigo.shade600 : Colors.white,
-            foregroundColor: _selectedMessages.isNotEmpty ? Colors.white : Colors.black87,
-            title: _selectedMessages.isNotEmpty 
-              ? Text('${_selectedMessages.length} selected') 
-              : (_showSidebarOnMobile ? const Text('Chats') : Text(_getOtherParticipant(_activeRoom)?.name ?? '')),
-            leading: !_showSidebarOnMobile && _selectedMessages.isEmpty
-              ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => setState(() => _showSidebarOnMobile = true))
-              : (_selectedMessages.isNotEmpty 
-                  ? IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() => _selectedMessages.clear())) 
-                  : null),
+    return PopScope(
+      canPop: _showSidebarOnMobile,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && !_showSidebarOnMobile) {
+          setState(() {
+            _showSidebarOnMobile = true;
+            _activeRoom = null;
+          });
+          widget.onActiveChatChanged?.call(false);
+        }
+      },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isDesktop = constraints.maxWidth > 768;
+          
+          return Scaffold(
+            backgroundColor: Colors.grey.shade100,
+            appBar: isDesktop ? null : AppBar(
+              backgroundColor: _selectedMessages.isNotEmpty ? Colors.indigo.shade600 : Colors.white,
+              foregroundColor: _selectedMessages.isNotEmpty ? Colors.white : Colors.black87,
+              title: _selectedMessages.isNotEmpty 
+                ? Text('${_selectedMessages.length} selected') 
+                : (_showSidebarOnMobile ? const Text('Chats') : Text(_getOtherParticipant(_activeRoom)?.name ?? '')),
+              leading: !_showSidebarOnMobile && _selectedMessages.isEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.arrow_back), 
+                    onPressed: () {
+                      setState(() {
+                        _showSidebarOnMobile = true;
+                        _activeRoom = null;
+                      });
+                      widget.onActiveChatChanged?.call(false);
+                    },
+                  )
+                : (_selectedMessages.isNotEmpty 
+                    ? IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() => _selectedMessages.clear())) 
+                    : null),
             actions: _selectedMessages.isNotEmpty 
               ? [
                   IconButton(icon: const Icon(Icons.copy), onPressed: () {
@@ -565,9 +598,10 @@ class _ChatScreenState extends State<ChatScreen> {
             ],
           ),
         );
-      }
-    );
-  }
+      },
+    ),
+  );
+}
   
   Widget _buildSidebarList() {
     final existingUserIds = <String>{};

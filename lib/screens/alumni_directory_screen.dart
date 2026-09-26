@@ -81,7 +81,7 @@ class _AlumniDirectoryScreenState extends State<AlumniDirectoryScreen> {
                     children: [
                       CircleAvatar(
                         radius: 30,
-                        backgroundColor: Colors.white.withOpacity(0.2),
+                        backgroundColor: Colors.white.withValues(alpha: 0.2),
                         child: Text(
                           user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
                           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
@@ -101,7 +101,7 @@ class _AlumniDirectoryScreenState extends State<AlumniDirectoryScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Text(
@@ -267,7 +267,7 @@ class _AlumniDirectoryScreenState extends State<AlumniDirectoryScreen> {
                         const Text('SEARCH FILTERS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2)),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          value: _filterDegree.isEmpty ? null : _filterDegree,
+                          initialValue: _filterDegree.isEmpty ? null : _filterDegree,
                           decoration: InputDecoration(
                             hintText: 'All Degrees / Categories',
                             filled: true,
@@ -287,7 +287,7 @@ class _AlumniDirectoryScreenState extends State<AlumniDirectoryScreen> {
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
-                          value: _filterBranch.isEmpty ? null : _filterBranch,
+                          initialValue: _filterBranch.isEmpty ? null : _filterBranch,
                           decoration: InputDecoration(
                             hintText: 'All Branches',
                             filled: true,

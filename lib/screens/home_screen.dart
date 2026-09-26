@@ -25,6 +25,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late int _pageIdx;
+  bool _isInsideChatRoom = false;
   int _currentEventIndex = 0;
   Timer? _timer;
 
@@ -80,9 +81,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final primary = Theme.of(context).colorScheme.primary;
 
     return PopScope(
-      canPop: _pageIdx == 0,
+      canPop: _pageIdx == 0 && !_isInsideChatRoom,
       onPopInvokedWithResult: (didPop, result) {
-        if (_pageIdx != 0) {
+        if (_isInsideChatRoom) {
+          setState(() {
+            _isInsideChatRoom = false;
+          });
+        } else if (_pageIdx != 0) {
           setState(() {
             _pageIdx = 0;
           });
@@ -90,37 +95,45 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       child: Scaffold(
         extendBody: true,
-        bottomNavigationBar: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 25),
-          child: Container(
-            height: 65,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: BorderRadius.circular(35),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                )
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                navItem(context, CupertinoIcons.house_fill, "Home", 0, primary),
-                navItem(context, CupertinoIcons.chat_bubble_2_fill, "Messages", 1, primary),
-                navItem(context, CupertinoIcons.person_fill, "Profile", 2, primary),
-              ],
-            ),
-          ),
-        ),
+        bottomNavigationBar: (_isInsideChatRoom && _pageIdx == 1)
+            ? null
+            : Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 25),
+                child: Container(
+                  height: 65,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.circular(35),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      )
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      navItem(context, CupertinoIcons.house_fill, "Home", 0, primary),
+                      navItem(context, CupertinoIcons.chat_bubble_2_fill, "Messages", 1, primary),
+                      navItem(context, CupertinoIcons.person_fill, "Profile", 2, primary),
+                    ],
+                  ),
+                ),
+              ),
         body: IndexedStack(
           index: _pageIdx,
           children: [
             _buildHomeContent(),
-            const ChatScreen(),
+            ChatScreen(
+              onActiveChatChanged: (insideRoom) {
+                setState(() {
+                  _isInsideChatRoom = insideRoom;
+                });
+              },
+            ),
             const ProfileScreen(),
           ],
         ),
@@ -136,6 +149,9 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () {
         setState(() {
           _pageIdx = index;
+          if (index != 1) {
+            _isInsideChatRoom = false;
+          }
         });
       },
       child: AnimatedContainer(

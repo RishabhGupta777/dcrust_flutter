@@ -201,7 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       drawer: const AppDrawer(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
         child: Column(
           children: [
             const Text('View your personal information and educational details all in one place.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
@@ -436,21 +436,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: Colors.grey.shade50,
                       borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: _isSaving ? null : _saveProfile,
-                          icon: _isSaving ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.save),
-                          label: Text(_isSaving ? 'Saving...' : 'Save Changes'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        )
-                      ],
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _isSaving ? null : _saveProfile,
+                        icon: _isSaving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.save),
+                        label: Text(_isSaving ? 'Saving...' : 'Save Changes', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.shade600,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 2,
+                        ),
+                      ),
                     ),
                   )
                 ],

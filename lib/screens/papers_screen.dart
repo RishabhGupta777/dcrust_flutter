@@ -159,7 +159,7 @@ class _PapersScreenState extends State<PapersScreen> {
                         const Text('Select Session & Year', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87)),
                         const SizedBox(height: 8),
                         DropdownButtonFormField<String>(
-                          value: _selectedYear,
+                          initialValue: _selectedYear,
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: Colors.grey.shade50,

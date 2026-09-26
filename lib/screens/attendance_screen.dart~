@@ -1,0 +1,539 @@
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import '../providers/attendance_provider.dart';
+import '../widgets/app_drawer.dart';
+
+class AttendanceScreen extends StatefulWidget {
+  const AttendanceScreen({super.key});
+
+  @override
+  State<AttendanceScreen> createState() => _AttendanceScreenState();
+}
+
+class _AttendanceScreenState extends State<AttendanceScreen> {
+  final _rollnoController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+  int? _expandedCourseIndex;
+
+  @override
+  void dispose() {
+    _rollnoController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _handleLogin() {
+    final rollno = _rollnoController.text.trim();
+    final password = _passwordController.text;
+    if (rollno.isEmpty || password.isEmpty) return;
+    
+    FocusScope.of(context).unfocus();
+    context.read<AttendanceProvider>().fetchAttendance(rollno, password);
+  }
+
+  void _handleLogout() {
+    context.read<AttendanceProvider>().clearAttendance();
+    setState(() {
+      _expandedCourseIndex = null;
+      _rollnoController.clear();
+      _passwordController.clear();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AttendanceProvider>(
+      builder: (context, provider, child) {
+        final isLoggedIn = provider.attendanceList.isNotEmpty;
+
+        return Scaffold(
+          backgroundColor: isLoggedIn ? const Color(0xFF0F1423) : Colors.grey[50],
+          appBar: AppBar(
+            backgroundColor: isLoggedIn ? const Color(0xFF0F1423) : Colors.white,
+            foregroundColor: isLoggedIn ? Colors.white : Colors.black,
+            elevation: 0,
+            title: Text(
+              'Attendance',
+              style: TextStyle(fontWeight: FontWeight.bold, color: isLoggedIn ? Colors.white : Colors.black),
+            ),
+          ),
+          drawer: const AppDrawer(),
+          body: isLoggedIn ? _buildDashboard(provider) : _buildLoginForm(provider),
+        );
+      },
+    );
+  }
+
+  Widget _buildLoginForm(AttendanceProvider provider) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 20),
+          const Text(
+            'DCRUST Attendance',
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.black87),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Check your DCRUST ERP attendance percentage online, anytime.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: Colors.grey),
+          ),
+          const SizedBox(height: 32),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10)),
+              ],
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.indigo, Colors.purple],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.fingerprint, color: Colors.white, size: 40),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Student Portal',
+                        style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      const Text(
+                        'Login to view your attendance',
+                        style: TextStyle(color: Colors.white70, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (provider.error != null)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.red.shade100),
+                          ),
+                          child: Text(
+                            provider.error!,
+                            style: TextStyle(color: Colors.red.shade700, fontSize: 13, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      const Text('Roll Number', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _rollnoController,
+                        decoration: InputDecoration(
+                          hintText: 'e.g. 21001015001',
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.indigo)),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text('Password', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
+                          hintText: 'Enter your password',
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.indigo)),
+                          suffixIcon: IconButton(
+                            icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
+                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: provider.isLoading ? null : _handleLogin,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.indigo,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        child: provider.isLoading
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Text('Sign In to ERP', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 40),
+          const Text('Frequently Asked Questions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          _buildFaqItem('How do I check my DCRUST attendance online?', 'Sign in with the same roll number and password you use for the official DCRUST ERP portal. Your subject-wise attendance percentage and class history are fetched directly from the ERP.'),
+          const SizedBox(height: 12),
+          _buildFaqItem('What does "safe bunks" mean?', 'Safe bunks shows how many classes you can miss for each subject while still staying above the minimum required attendance percentage (75%).'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFaqItem(String q, String a) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(q, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          const SizedBox(height: 4),
+          Text(a, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDashboard(AttendanceProvider provider) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4F8EF7).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.bar_chart, color: Color(0xFF4F8EF7)),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Attendance', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text('Roll No. ${provider.savedRollno ?? _rollnoController.text}', style: const TextStyle(color: Color(0xFF8899BB), fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
+              OutlinedButton(
+                onPressed: _handleLogout,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFFF5370),
+                  side: const BorderSide(color: Color(0xFFFF5370)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('LOGOUT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              ),
+            ],
+          ),
+        ),
+        
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A2235),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFF243050)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: const Color(0xFF4F8EF7).withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                    child: const Icon(Icons.book, color: Color(0xFF4F8EF7)),
+                  ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('TOTAL SUBJECTS', style: TextStyle(color: Color(0xFF8899BB), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                      Text('${provider.attendanceList.length} Enrolled', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+                    ],
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF22D3A5).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF22D3A5).withOpacity(0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.circle, color: Color(0xFF22D3A5), size: 8),
+                    SizedBox(width: 6),
+                    Text('LIVE', style: TextStyle(color: Color(0xFF22D3A5), fontSize: 10, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: provider.attendanceList.length,
+            itemBuilder: (context, index) {
+              final course = provider.attendanceList[index];
+              final details = course.details;
+              final present = details.where((d) => d.status).length;
+              final absent = details.where((d) => !d.status).length;
+              final total = details.length;
+              final percentage = total > 0 ? (present / total) * 100 : 0.0;
+              
+              int safeBunk = total > 0 ? ((present / 0.75) - total).floor() : 0;
+              if (safeBunk < 0) safeBunk = 0;
+
+              Color accentColor;
+              if (percentage >= 75) {
+                accentColor = const Color(0xFF22D3A5);
+              } else if (percentage >= 60) {
+                accentColor = const Color(0xFFFFB547);
+              } else {
+                accentColor = const Color(0xFFFF5370);
+              }
+
+              final isExpanded = _expandedCourseIndex == index;
+
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _expandedCourseIndex = isExpanded ? null : index;
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A2235),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: const Color(0xFF243050).withOpacity(0.5)),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 5)),
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        left: 0,
+                        top: 24,
+                        bottom: 24,
+                        child: Container(width: 4, decoration: BoxDecoration(color: accentColor, borderRadius: const BorderRadius.only(topRight: Radius.circular(4), bottomRight: Radius.circular(4)))),
+                      ),
+                      Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Row(
+                              children: [
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(course.code, style: const TextStyle(color: Color(0xFF8899BB), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                                      const SizedBox(height: 4),
+                                      Text(course.name, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+                                    ],
+                                  ),
+                                ),
+                                _buildCircularProgress(percentage, accentColor),
+                                const SizedBox(width: 12),
+                                Icon(isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: const Color(0xFF8899BB)),
+                              ],
+                            ),
+                          ),
+                          if (isExpanded)
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF111623),
+                                borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                    children: [
+                                      _buildStatItem('Present', present.toString(), const Color(0xFF22D3A5), Icons.check_circle),
+                                      _buildStatItem('Absent', absent.toString(), const Color(0xFFFF5370), Icons.cancel),
+                                      _buildStatItem('Total', total.toString(), Colors.white, Icons.bar_chart),
+                                      _buildStatItem('Safe Bunk', safeBunk.toString(), const Color(0xFFFFB547), Icons.directions_walk),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 20),
+                                  const Divider(color: Color(0xFF243050)),
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 8),
+                                    child: Text('CLASS HISTORY', style: TextStyle(color: Color(0xFF8899BB), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                                  ),
+                                  if (details.isEmpty)
+                                    const Padding(
+                                      padding: EdgeInsets.all(16.0),
+                                      child: Text('No classes recorded yet.', style: TextStyle(color: Color(0xFF8899BB))),
+                                    )
+                                  else
+                                    ...details.reversed.map((day) => _buildHistoryItem(day)).toList(),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCircularProgress(double percentage, Color color) {
+    return SizedBox(
+      width: 50,
+      height: 50,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CircularProgressIndicator(
+            value: percentage / 100,
+            strokeWidth: 4,
+            backgroundColor: const Color(0xFF243050),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            strokeCap: StrokeCap.round,
+          ),
+          Center(
+            child: Text(
+              '${percentage.round()}%',
+              style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, Color color, IconData icon) {
+    return Container(
+      width: 70,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A2235),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(height: 8),
+          Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 4),
+          Text(label, style: const TextStyle(color: Color(0xFF8899BB), fontSize: 9, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryItem(dynamic day) {
+    final isPresent = day.status == true;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A2235),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF243050).withOpacity(0.5)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isPresent ? const Color(0xFF22D3A5) : const Color(0xFFFF5370),
+                  boxShadow: [
+                    BoxShadow(color: (isPresent ? const Color(0xFF22D3A5) : const Color(0xFFFF5370)).withOpacity(0.5), blurRadius: 4),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(day.date, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+            ],
+          ),
+          Row(
+            children: [
+              Text(day.time, style: const TextStyle(color: Color(0xFF8899BB), fontSize: 11)),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: (isPresent ? const Color(0xFF22D3A5) : const Color(0xFFFF5370)).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: (isPresent ? const Color(0xFF22D3A5) : const Color(0xFFFF5370)).withOpacity(0.3)),
+                ),
+                child: Text(
+                  isPresent ? 'PRESENT' : 'ABSENT',
+                  style: TextStyle(color: isPresent ? const Color(0xFF22D3A5) : const Color(0xFFFF5370), fontSize: 9, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
